@@ -8,7 +8,7 @@ lympho <- lympho[-nrow(lympho), ]
 ID <- lympho[, 1]
 genes <- as.character(genes[ID])
 
-TADA <- read.table('TADAs.csv', sep = '\t', as.is = TRUE, header = TRUE)
+TADA <- read.table('~/Project/hongyu/Project/lympho/TADAs.csv', sep = '\t', as.is = TRUE, header = TRUE)
 TADA <- TADA[, !apply(TADA, 2, function(x) all(is.na(x)))]
 tada <- TADA$tadaFdrAscSscExome
 names(tada) <- TADA$RefSeqGeneName
@@ -59,3 +59,22 @@ rownames(case.control) <- selected.genes
 top30 <- names(sort(tada.values)[1:30])
 change.30 <- apply(case.control[top30, ], 1, sum)
 test <- apply(case.control, 1, sum)
+
+
+#########################
+cases.sim <- cor(t(lympho.cases))
+diag(cases.sim) <- 0
+cases.sim <- atanh(cases.sim)
+controls.sim <- cor(t(lympho.controls))
+diag(controls.sim) <- 0
+controls.sim <- atanh(controls.sim)
+z.sim <- abs(cases.sim - controls.sim)/(sqrt(1/(230)+1/(206)))
+
+case.control <- 2*pnorm(-abs(z.sim))
+case.control.adjusted<- p.adjust(case.control, method = 'BH')
+case.control <- case.control.adjusted < 0.05
+case.control <- matrix(case.control, ncol = length(selected.genes))
+rownames(case.control) <- selected.genes
+test <- apply(case.control, 1, sum)
+names(test) <- selected.genes
+top30 <- names(sort(test, decreasing = TRUE)[1:200])
